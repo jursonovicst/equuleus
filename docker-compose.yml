@@ -1,0 +1,23 @@
+version: "3.8"
+services:
+  broker:
+    build: broker/
+    image: equuleus/broker:latest
+    ports:
+      - "5560"
+
+  backend:
+    build: backend/
+    image: equuleus/backend:latest
+#    entrypoint: ["python3", "/broker.py"]
+#    ports:
+#      - "5000:5000"
+#    volumes:
+#      - .:/code
+#      - logvolume01:/var/log
+#    links:
+#      - redis
+#  redis:
+#    image: redis
+#volumes:
+#  logvolume01: {}
