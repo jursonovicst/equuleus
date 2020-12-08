@@ -2,13 +2,37 @@ version: "3.8"
 services:
   broker:
     build: broker/
-    image: equuleus/broker:latest
+    image: equuleus/broker
     ports:
-      - "5560"
+      - "5560:5560"
+      - "5559:5559"
+    networks:
+      - frontend
+      - backend
 
   backend:
     build: backend/
-    image: equuleus/backend:latest
+    image: equuleus/backend
+    networks:
+      - backend
+
+  powerdns:
+    build: powerdns/
+    image: equuleus/powerdns
+    environment:
+      BROKER_ENDPOINT: "tcp://broker:5560"
+    ports:
+      - "1053:53"
+      - "1053:53/udp"
+      - "8081:8081"
+    networks:
+      - frontend
+#    entrypoint: echo $BROKER_ENDPOINT
+
+networks:
+  frontend:
+  backend:
+
 #    entrypoint: ["python3", "/broker.py"]
 #    ports:
 #      - "5000:5000"
