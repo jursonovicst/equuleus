@@ -7,8 +7,10 @@ import binascii
 
 parser = argparse.ArgumentParser(description='0MQ broker.')
 
-parser.add_argument('--frontend', type=str, default='ipc:///tmp/broker.sock', help='frontend endpoint to bind to (default: %(default)s)')
-parser.add_argument('--backend', type=str, default='tcp://*:5560', help='backend endpoint to bind to (default: %(default)s)')
+parser.add_argument('frontend', type=str, help='frontend endpoint to bind to')
+parser.add_argument('backend', type=str, help='backend endpoint to bind to')
+#parser.add_argument('--frontend', type=str, default='ipc:///tmp/broker.sock', help='frontend endpoint to bind to (default: %(default)s)')
+#parser.add_argument('--backend', type=str, default='tcp://*:5560', help='backend endpoint to bind to (default: %(default)s)')
 parser.add_argument('--log-file', type=str, default='-',
                     help='File path to write logs to. Use - for stdout. (default: %(default)s')
 levels = ('DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL')
@@ -31,16 +33,16 @@ def capture_run(ctx):
 
             # JSON?
             try:
-                logging.debug(f"JSON:\n{json.dumps(json.loads(msg), indent=4, sort_keys=True)}")
+                logging.debug(f"JSON:\n{json.dumps(json.loads(msg), indent=4, sort_keys=True)} ({binascii.hexlify(msg)})")
             except:
                 # string?
                 try:
-                    logging.debug(f"String: '{msg.decode()}'")
+                    logging.debug(f"String: '{msg.decode()}' ({binascii.hexlify(msg)})")
                 except:
                     # bytes
                     logging.debug(f"bytes: '{binascii.hexlify(msg)}'")
 
-        except zmq.error.ContextTerminated as e:
+        except zmq.error.ContextTerminated:
             run = False
         except Exception as e:
             logging.warning(f"{type(e)} error: {e} processing msg: {binascii.hexlify(msg)}")
@@ -80,7 +82,7 @@ if __name__ == "__main__":
             capture.recv()  # wait for signal from peer thread
 
         logging.info(f"Starting 0MQ broker on '{args.frontend}' frontend and '{args.backend}' backend...")
-        zmq.proxy(frontend, backend, capture)
+        zmq.proxy(frontend, backend, capture if capture else None)
 
         # We never get here...
     except KeyboardInterrupt:

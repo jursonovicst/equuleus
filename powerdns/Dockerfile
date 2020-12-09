@@ -53,10 +53,9 @@ RUN mkdir /build && \
       --with-lua=luajit \
       --sysconfdir=/etc/powerdns \
       --enable-option-checking=fatal \
-      --with-dynmodules='pipe random remote' \
+      --with-dynmodules='pipe remote' \
       --enable-tools \
-      --enable-remotebackend-zeromq \
-      --enable-ixfrdist && \
+      --enable-remotebackend-zeromq && \
     make clean && \
     make $MAKEFLAGS -C ext && make $MAKEFLAGS -C modules && make $MAKEFLAGS -C pdns && \
     make -C pdns install DESTDIR=/build && make -C modules install DESTDIR=/build && make clean && \
@@ -79,7 +78,7 @@ FROM ubuntu:focal
 RUN apt-get update && apt-get -y dist-upgrade && apt-get clean
 
 # Ensure python3 and jinja2 is present (for startup script), and tini (for signal management)
-RUN apt-get install -y python3 python3-jinja2 tini libcap2-bin vim libzmq5 iputils-ping && apt-get clean
+RUN apt-get install -y python3 python3-jinja2 tini libcap2-bin vim libzmq5 iputils-ping dnsutils && apt-get clean
 
 # Output from builder
 COPY --from=builder /build /
@@ -100,18 +99,22 @@ RUN adduser --system --disabled-password --disabled-login --no-create-home --gro
 RUN chown pdns:pdns /var/run/pdns /var/lib/powerdns /etc/powerdns/pdns.d /etc/powerdns/templates.d
 #USER pdns
 
-COPY remote_backend.j2 /etc/powerdns/templates.d/
-ENV TEMPLATE_FILES="remote_backend"
+COPY remote_backend.j2 edns.j2 /etc/powerdns/templates.d/
+ENV TEMPLATE_FILES="remote_backend,edns"
 
-#ENV BROKER_PORT=5560
-#ENV BROKER_ENDPOINT="tcp://127.0.0.1:${BROKER_PORT}"
-#ENV BROKER_ENDPOINT
+COPY app /app
+RUN apt-get install -y python3-zmq
+
+ENV PDNS_LOGLEVEL="INFO"
+ENV BROKER_ENDPOINT="tcp://127.0.0.1:5560"
 
 # DNS ports
 EXPOSE 53/udp
 EXPOSE 53/tcp
-
 # webserver port
 EXPOSE 8081/tcp
+
+HEALTHCHECK CMD dig +short @127.0.0.1 keepalive.main.xpx.t-online.de |grep 192.0.2.1 >/dev/null
+#HEALTHCHECK CMD pdns_control rping
 
 ENTRYPOINT ["/usr/bin/tini", "--", "/usr/local/sbin/pdns_server-startup"]

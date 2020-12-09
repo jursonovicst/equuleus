@@ -8,13 +8,15 @@ services:
       - "5559:5559"
     networks:
       - frontend
-      - backend
 
   backend:
     build: backend/
     image: equuleus/backend
+    environment:
+      BROKER_ENDPOINT: "tcp://broker:5559"
+      BACKEND_LOGLEVEL: "DEBUG"
     networks:
-      - backend
+      - frontend
 
   powerdns:
     build: powerdns/
@@ -31,7 +33,6 @@ services:
 
 networks:
   frontend:
-  backend:
 
 #    entrypoint: ["python3", "/broker.py"]
 #    ports:

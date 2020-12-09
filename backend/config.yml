@@ -1,0 +1,24 @@
+# Employee records
+SOA:
+  name: 'main.xpx.t-online.de.'
+  mname: 'ns1.xpx.t-online.de.'
+  rname: 'admin.t-online.de.'
+  serial: 2020010100
+  refresh: 86400
+  retry: 7200
+  expire: 3600000
+  ttl: 300
+
+job:
+  skills:
+    - python
+    - perl
+    - pascal
+
+tabitha:
+  name: 'Tabitha Bitumen'
+  job: Developer
+  skills:
+    - lisp
+    - fortran
+    - erlang
