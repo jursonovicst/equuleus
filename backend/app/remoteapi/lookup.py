@@ -89,9 +89,8 @@ class Record:
     def loadconfig(cls, configfile: str = 'config.yml'):
         """
 
-        :param dsfile:
+        :param configfile:
         :return:
-        :raises yaml.YAMLError
         """
         with open(configfile, 'r') as stream:
             cls._config = yaml.safe_load(stream)

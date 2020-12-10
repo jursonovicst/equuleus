@@ -78,7 +78,7 @@ FROM ubuntu:focal
 RUN apt-get update && apt-get -y dist-upgrade && apt-get clean
 
 # Ensure python3 and jinja2 is present (for startup script), and tini (for signal management)
-RUN apt-get install -y python3 python3-jinja2 tini libcap2-bin vim libzmq5 iputils-ping dnsutils && apt-get clean
+RUN apt-get install -y python3 python3-jinja2 tini libcap2-bin && apt-get clean
 
 # Output from builder
 COPY --from=builder /build /
@@ -91,7 +91,6 @@ RUN apt install -y /tmp/equivs-dummy_1.0_all.deb && apt clean
 # Start script
 COPY pdns/dockerdata/startup.py /usr/local/sbin/pdns_server-startup
 
-COPY pdns/dockerdata/pdns.conf /etc/powerdns/
 RUN mkdir -p /etc/powerdns/pdns.d /var/run/pdns /var/lib/powerdns /etc/powerdns/templates.d
 
 # Work with pdns user - not root
@@ -99,14 +98,25 @@ RUN adduser --system --disabled-password --disabled-login --no-create-home --gro
 RUN chown pdns:pdns /var/run/pdns /var/lib/powerdns /etc/powerdns/pdns.d /etc/powerdns/templates.d
 #USER pdns
 
-COPY remote_backend.j2 edns.j2 /etc/powerdns/templates.d/
+COPY pdns.conf /etc/powerdns/
+COPY remote_backend.j2 edns.j2 pipe_backend.j2 /etc/powerdns/templates.d/
+
 ENV TEMPLATE_FILES="remote_backend,edns"
+#ENV TEMPLATE_FILES="pipe_backend,edns"
 
 COPY app /app
-RUN apt-get install -y python3-zmq
+
+# for debug
+#RUN apt-get install -y vim iputils-ping dnsutils tcpdump tshark iproute2 && apt-get clean
 
 ENV PDNS_LOGLEVEL="INFO"
-ENV BROKER_ENDPOINT="tcp://127.0.0.1:5560"
+
+# for zmqconnector
+#ENV BACKEND_ENDPOINT="tcp://127.0.0.1:5560"
+# for PipeBackend
+#ENV BACKEND_ENDPOINT="/tmp/backend.sock"
+# for HTTPBackend
+ENV BACKEND_ENDPOINT="http://backend:8080"
 
 # DNS ports
 EXPOSE 53/udp
@@ -114,7 +124,7 @@ EXPOSE 53/tcp
 # webserver port
 EXPOSE 8081/tcp
 
-HEALTHCHECK CMD dig +short @127.0.0.1 keepalive.main.xpx.t-online.de |grep 192.0.2.1 >/dev/null
-#HEALTHCHECK CMD pdns_control rping
+#HEALTHCHECK CMD dig +short @127.0.0.1 keepalive.main.xpx.t-online.de |grep 192.0.2.1 >/dev/null
+HEALTHCHECK CMD pdns_control rping
 
 ENTRYPOINT ["/usr/bin/tini", "--", "/usr/local/sbin/pdns_server-startup"]

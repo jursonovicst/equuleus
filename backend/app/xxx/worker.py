@@ -3,7 +3,7 @@ from backend import ZMQConnector
 
 import logging
 import random
-from multiprocessing import Process
+from multiprocessing import Process, get_logger
 from threading import Event
 import zmq
 

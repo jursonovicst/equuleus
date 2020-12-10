@@ -1,2 +1,1 @@
-from .zmqconnector import ZMQConnector
-from .worker import Worker
+from .dnsresponder import DNSResponder
